@@ -1,3 +1,7 @@
+% Code mostly from http://www.alecjacobson.com/weblog/?p=917
+% I modified this so that it works with the particular .obj format we use.
+
+
 function [V,C,F] = read_vertices_and_faces_from_obj_file(filename)
   % Reads a .obj mesh file and outputs the vertex and face list
   % assumes a 3D triangle mesh and ignores everything but:
