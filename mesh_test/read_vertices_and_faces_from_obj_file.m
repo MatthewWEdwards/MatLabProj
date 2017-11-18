@@ -1,4 +1,4 @@
-function [V,F] = read_vertices_and_faces_from_obj_file(filename)
+function [V,C,F] = read_vertices_and_faces_from_obj_file(filename)
   % Reads a .obj mesh file and outputs the vertex and face list
   % assumes a 3D triangle mesh and ignores everything but:
   % v x y z and f i j k lines
@@ -7,23 +7,26 @@ function [V,F] = read_vertices_and_faces_from_obj_file(filename)
   %
   % Output:
   %  V  number of vertices x 3 array of vertex positions
+  %  C  vertex colors
   %  F  number of faces x 3 array of face indices
   %
   V = zeros(0,3);
+  C = zeros(0,3);
   F = zeros(0,3);
   vertex_index = 1;
   face_index = 1;
   fid = fopen(filename,'rt');
   line = fgets(fid);
   while ischar(line)
-    vertex = sscanf(line,'v %f %f %f');
+    vertex = sscanf(line,'v %f %f %f %f %f %f');
     face = sscanf(line,'f %d %d %d');
     face_long = sscanf(line,'f %d//%d %d//%d %d//%d',6);
     face_long_long = sscanf(line,'f %d/%d/%d %d/%d/%d %d/%d/%d',9);
 
     % see if line is vertex command if so add to vertices
     if(size(vertex)>0)
-      V(vertex_index,:) = vertex;
+      V(vertex_index,:) = vertex(1:3);
+      C(vertex_index,:) = vertex(4:6);
       vertex_index = vertex_index+1;
    % see if line is simple face command if so add to faces
     elseif(size(face,1)==3)
