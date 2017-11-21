@@ -257,8 +257,18 @@ while runLoop && frameCount < 400
         end
 
     end
-    answer1 = bboxPolygonEyes
-    answer2 = bboxPolygonNose
+    if(size(bboxPolygonEyes,2) == 8 && size(bboxPolygonNose,2) == 8)
+        %[x1 y1 x2 y2 x3 y3 x4 y4]
+      %  answer1 = bboxPolygonEyes
+        xEyesAvg = (bboxPolygonEyes(1) + bboxPolygonEyes(3) + bboxPolygonEyes(5) + bboxPolygonEyes(7)) / 4;
+        yEyesAvg = (bboxPolygonEyes(2) + bboxPolygonEyes(4) + bboxPolygonEyes(6) + bboxPolygonEyes(8)) / 4;
+      %  answer2 = bboxPolygonNose
+        xNoseAvg = (bboxPolygonNose(1) + bboxPolygonNose(3) + bboxPolygonNose(5) + bboxPolygonNose(7)) / 4;
+        yNoseAvg = (bboxPolygonNose(2) + bboxPolygonNose(4) + bboxPolygonNose(6) + bboxPolygonNose(8)) / 4;
+        azimuth = atan((xNoseAvg - xEyesAvg)/(yNoseAvg - yEyesAvg));
+        elevation = atan((yNoseAvg - yEyesAvg)/(10));
+        answer = [azimuth elevation]
+    end
 
     % Display the annotated video frame using the video player object.
     step(videoPlayer, videoFrame);
