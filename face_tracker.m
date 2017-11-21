@@ -1,4 +1,7 @@
 clear all;
+global bboxPolygonEyes;
+global bboxPolygonNose;
+
 
 % Create the face detector object.
 faceDetector = vision.CascadeObjectDetector();
@@ -7,11 +10,9 @@ noseDetector = vision.CascadeObjectDetector('Nose','UseROI',true);
 
 
 % Create the point tracker object.
-pointTracker = vision.PointTracker('MaxBidirectionalError', 2);
-pointTracker2 = vision.PointTracker('MaxBidirectionalError', 2);
-pointTracker3 = vision.PointTracker('MaxBidirectionalError', 2);
-pointTracker4 = vision.PointTracker('MaxBidirectionalError', 2);
-pointTracker5 = vision.PointTracker('MaxBidirectionalError', 2);
+pointTrackerFace = vision.PointTracker('MaxBidirectionalError', 2);
+pointTrackerEyes = vision.PointTracker('MaxBidirectionalError', 2);
+pointTrackerNosee = vision.PointTracker('MaxBidirectionalError', 2);
 
 % Create the webcam object.
 cam = webcam();
@@ -24,11 +25,9 @@ frameSize = size(videoFrame);
 videoPlayer = vision.VideoPlayer('Position', [100 100 [frameSize(2), frameSize(1)]+30]);
 
 runLoop = true;
-numPts = 0;
-numPts2 = 0;
-numPts3 = 0;
-numPts4 = 0;
-numPts5 = 0;
+numPtsFace = 0;
+numPtsEyes = 0;
+numPtsNose = 0;
 frameCount = 0;
 
 while runLoop && frameCount < 400
@@ -38,7 +37,7 @@ while runLoop && frameCount < 400
     videoFrameGray = rgb2gray(videoFrame);
     frameCount = frameCount + 1;
 
-    if numPts < 10
+    if numPtsFace < 10
         % Detection mode.
         bbox = faceDetector.step(videoFrameGray);
 
@@ -49,9 +48,9 @@ while runLoop && frameCount < 400
             % Re-initialize the point tracker.
             xyPoints = points.Location;
 
-            numPts = size(xyPoints,1);
-            release(pointTracker);
-            initialize(pointTracker, xyPoints, videoFrameGray);
+            numPtsFace = size(xyPoints,1);
+            release(pointTrackerFace);
+            initialize(pointTrackerFace, xyPoints, videoFrameGray);
 
             % Save a copy of the points.
             oldPoints = xyPoints;
@@ -75,13 +74,13 @@ while runLoop && frameCount < 400
 
     else
         % Tracking mode.
-        [xyPoints, isFound] = step(pointTracker, videoFrameGray);
+        [xyPoints, isFound] = step(pointTrackerFace, videoFrameGray);
         visiblePoints = xyPoints(isFound, :);
         oldInliers = oldPoints(isFound, :);
 
-        numPts = size(visiblePoints, 1);
+        numPtsFace = size(visiblePoints, 1);
 
-        if numPts >= 10
+        if numPtsFace >= 10
             % Estimate the geometric transformation between the old points
             % and the new points.
             [xform, oldInliers, visiblePoints] = estimateGeometricTransform(...
@@ -103,159 +102,163 @@ while runLoop && frameCount < 400
 
             % Reset the points.
             oldPoints = visiblePoints;
-            setPoints(pointTracker, oldPoints);
+            setPoints(pointTrackerFace, oldPoints);
         end
 
     end
     
-    if numPts2 < 10
+    if numPtsEyes < 10
         % Detection mode.
         if(size(bbox) ~= 0)
-            bbox2 = eyeDetector.step(videoFrameGray,bbox(1, :));
+            bboxEyes = eyeDetector.step(videoFrameGray,bbox(1, :));
         else
-            bbox2 = eyeDetector.step(videoFrameGray,[30, 30, frameSize(2)-30, frameSize(1)-30]);
+            size(videoFrameGray)
+            frameSize_ = frameSize
+            bboxEyes = eyeDetector.step(videoFrameGray,[30, 30, frameSize(2)-30, frameSize(1)-30]);
         end
         
-        if ~isempty(bbox2)
+        if ~isempty(bboxEyes)
             % Find corner points inside the detected region.
-            points2 = detectMinEigenFeatures(videoFrameGray, 'ROI', bbox2(1, :));
+            pointsEyes = detectMinEigenFeatures(videoFrameGray, 'ROI', bboxEyes(1, :));
 
             % Re-initialize the point tracker.
-            xyPoints2 = points2.Location;
+            xyPointsEyes = pointsEyes.Location;
 
-            numPts2 = size(xyPoints2,1);
-            release(pointTracker2);
-            initialize(pointTracker2, xyPoints2, videoFrameGray);
+            numPtsEyes = size(xyPointsEyes,1);
+            release(pointTrackerEyes);
+            initialize(pointTrackerEyes, xyPointsEyes, videoFrameGray);
 
             % Save a copy of the points.
-            oldPoints2 = xyPoints2;
+            oldPointsEyes = xyPointsEyes;
 
             % Convert the rectangle represented as [x, y, w, h] into an
             % M-by-2 matrix of [x,y] coordinates of the four corners. This
             % is needed to be able to transform the bounding box to display
             % the orientation of the face.
-            bboxPoints2 = bbox2points(bbox2(1, :));
+            bboxPointsEyes = bbox2points(bboxEyes(1, :));
 
             % Convert the box corners into the [x1 y1 x2 y2 x3 y3 x4 y4]
             % format required by insertShape.
-            bboxPolygon2 = reshape(bboxPoints2', 1, []);
+            bboxPolygonEyes = reshape(bboxPointsEyes', 1, []);
 
             % Display a bounding box around the detected face.
-            videoFrame = insertShape(videoFrame, 'Polygon', bboxPolygon2, 'LineWidth', 3);
+            videoFrame = insertShape(videoFrame, 'Polygon', bboxPolygonEyes, 'LineWidth', 3);
 
             % Display detected corners.
-            videoFrame = insertMarker(videoFrame, xyPoints2, '+', 'Color', 'blue');
+            videoFrame = insertMarker(videoFrame, xyPointsEyes, '+', 'Color', 'blue');
         end
 
     else
         % Tracking mode.
-        [xyPoints2, isFound2] = step(pointTracker2, videoFrameGray);
-        visiblePoints2 = xyPoints2(isFound2, :);
-        oldInliers2 = oldPoints2(isFound2, :);
+        [xyPointsEyes, isFoundEyes] = step(pointTrackerEyes, videoFrameGray);
+        visiblePointsEyes = xyPointsEyes(isFoundEyes, :);
+        oldInliersEyes = oldPointsEyes(isFoundEyes, :);
 
-        numPts2 = size(visiblePoints2, 1);
+        numPtsEyes = size(visiblePointsEyes, 1);
 
-        if numPts2 >= 10
+        if numPtsEyes >= 10
             % Estimate the geometric transformation between the old points
             % and the new points.
-            [xform2, oldInliers2, visiblePoints2] = estimateGeometricTransform(...
-                oldInliers2, visiblePoints2, 'similarity', 'MaxDistance', 4);
+            [xform2, oldInliersEyes, visiblePointsEyes] = estimateGeometricTransform(...
+                oldInliersEyes, visiblePointsEyes, 'similarity', 'MaxDistance', 4);
 
             % Apply the transformation to the bounding box.
-            bboxPoints2 = transformPointsForward(xform2, bboxPoints2);
+            bboxPointsEyes = transformPointsForward(xform2, bboxPointsEyes);
             
 
             % Convert the box corners into the [x1 y1 x2 y2 x3 y3 x4 y4]
             % format required by insertShape.
-            bboxPolygon2 = reshape(bboxPoints2', 1, []);
+            bboxPolygonEyes = reshape(bboxPointsEyes', 1, []);
 
             % Display a bounding box around the face being tracked.
-            videoFrame = insertShape(videoFrame, 'Polygon', bboxPolygon2, 'LineWidth', 3);
+            videoFrame = insertShape(videoFrame, 'Polygon', bboxPolygonEyes, 'LineWidth', 3);
 
             % Display tracked points.
-            videoFrame = insertMarker(videoFrame, visiblePoints2, '+', 'Color', 'blue');
+            videoFrame = insertMarker(videoFrame, visiblePointsEyes, '+', 'Color', 'blue');
 
             % Reset the points.
-            oldPoints2 = visiblePoints2;
-            setPoints(pointTracker2, oldPoints2);
+            oldPointsEyes = visiblePointsEyes;
+            setPoints(pointTrackerEyes, oldPointsEyes);
         end
 
     end
     
     
-    if numPts5 < 10
+    if numPtsNose < 10
         % Detection mode.
         if(size(bbox) ~= 0)
-            bbox5 = noseDetector.step(videoFrameGray,bbox(1, :));
+            bboxNose = noseDetector.step(videoFrameGray,bbox(1, :));
         else
-            bbox5 = noseDetector.step(videoFrameGray,[30, 30, frameSize(2)-30, frameSize(1)-30]);
+            bboxNose = noseDetector.step(videoFrameGray,[30, 30, frameSize(2)-30, frameSize(1)-30]);
         end
 
-        if ~isempty(bbox5)
+        if ~isempty(bboxNose)
             % Find corner points inside the detected region.
-            points5 = detectMinEigenFeatures(videoFrameGray, 'ROI', bbox5(1, :));
+            pointsNose = detectMinEigenFeatures(videoFrameGray, 'ROI', bboxNose(1, :));
 
             % Re-initialize the point tracker.
-            xyPoints5 = points5.Location;
+            xyPointsNose = pointsNose.Location;
 
-            numPts5 = size(xyPoints5,1);
-            release(pointTracker5);
-            initialize(pointTracker5, xyPoints5, videoFrameGray);
+            numPtsNose = size(xyPointsNose,1);
+            release(pointTrackerNosee);
+            initialize(pointTrackerNosee, xyPointsNose, videoFrameGray);
 
             % Save a copy of the points.
-            oldPoints5 = xyPoints5;
+            oldPointsNose = xyPointsNose;
 
             % Convert the rectangle represented as [x, y, w, h] into an
             % M-by-2 matrix of [x,y] coordinates of the four corners. This
             % is needed to be able to transform the bounding box to display
             % the orientation of the face.
-            bboxPoints5 = bbox2points(bbox5(1, :));
+            bboxPointsNose = bbox2points(bboxNose(1, :));
 
             % Convert the box corners into the [x1 y1 x2 y2 x3 y3 x4 y4]
             % format required by insertShape.
-            bboxPolygon5 = reshape(bboxPoints5', 1, []);
+            bboxPolygonNose = reshape(bboxPointsNose', 1, []);
 
             % Display a bounding box around the detected face.
-            videoFrame = insertShape(videoFrame, 'Polygon', bboxPolygon5, 'LineWidth', 3);
+            videoFrame = insertShape(videoFrame, 'Polygon', bboxPolygonNose, 'LineWidth', 3);
 
             % Display detected corners.
-            videoFrame = insertMarker(videoFrame, xyPoints5, '+', 'Color', 'white');
+            videoFrame = insertMarker(videoFrame, xyPointsNose, '+', 'Color', 'white');
         end
 
     else
         % Tracking mode.
-        [xyPoints5, isFound5] = step(pointTracker5, videoFrameGray);
-        visiblePoints5 = xyPoints5(isFound5, :);
-        oldInliers5 = oldPoints5(isFound5, :);
+        [xyPointsNose, isFound5] = step(pointTrackerNosee, videoFrameGray);
+        visiblePoints5 = xyPointsNose(isFound5, :);
+        oldInliers5 = oldPointsNose(isFound5, :);
 
-        numPts5 = size(visiblePoints5, 1);
+        numPtsNose = size(visiblePoints5, 1);
 
-        if numPts5 >= 10
+        if numPtsNose >= 10
             % Estimate the geometric transformation between the old points
             % and the new points.
             [xform5, oldInliers5, visiblePoints5] = estimateGeometricTransform(...
                 oldInliers5, visiblePoints5, 'similarity', 'MaxDistance', 3);
 
             % Apply the transformation to the bounding box.
-            bboxPoints5 = transformPointsForward(xform5, bboxPoints5);
+            bboxPointsNose = transformPointsForward(xform5, bboxPointsNose);
             
 
             % Convert the box corners into the [x1 y1 x2 y2 x3 y3 x4 y4]
             % format required by insertShape.
-            bboxPolygon5 = reshape(bboxPoints5', 1, []);
+            bboxPolygonNose = reshape(bboxPointsNose', 1, []);
 
             % Display a bounding box around the face being tracked.
-            videoFrame = insertShape(videoFrame, 'Polygon', bboxPolygon5, 'LineWidth', 3);
+            videoFrame = insertShape(videoFrame, 'Polygon', bboxPolygonNose, 'LineWidth', 3);
 
             % Display tracked points.
             videoFrame = insertMarker(videoFrame, visiblePoints5, '+', 'Color', 'blue');
 
             % Reset the points.
-            oldPoints5 = visiblePoints5;
-            setPoints(pointTracker5, oldPoints5);
+            oldPointsNose = visiblePoints5;
+            setPoints(pointTrackerNosee, oldPointsNose);
         end
 
     end
+    answer1 = bboxPolygonEyes
+    answer2 = bboxPolygonNose
 
     % Display the annotated video frame using the video player object.
     step(videoPlayer, videoFrame);
@@ -267,5 +270,5 @@ end
 % Clean up.
 clear cam;
 release(videoPlayer);
-release(pointTracker);
+release(pointTrackerFace);
 release(faceDetector);
