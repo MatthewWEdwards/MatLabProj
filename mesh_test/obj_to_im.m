@@ -6,6 +6,12 @@ function [ image ] = obj_to_im( path_to_obj, height, width )
 
     % Get face information
     [V,C,F] = read_vertices_and_faces_from_obj_file(path_to_obj);
+    az = -40; el = -40;
+    A = viewmtx(az, el);
+    vdim4 = [V ones(size(V,1), 1)];
+    vdim4 = vdim4';
+    viewV = A*vdim4;
+    V = viewV';
     sz_verticies = size(V);
     sz_faces = size(F);
     
