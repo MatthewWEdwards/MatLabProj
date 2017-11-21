@@ -48,8 +48,6 @@ function [V,C,F] = read_vertices_and_faces_from_obj_file(filename)
       face_long_long = face_long_long(1:3:end);
       F(face_index,:) = face_long_long;
       face_index = face_index+1;
-    else
-      fprintf('Ignored: %s',line);
     end
 
     line = fgets(fid);
