@@ -1,12 +1,13 @@
-function [ image ] = obj_to_im( path_to_obj, height, width )
+function [ image ] = obj_to_im( path_to_obj, height, width, az, el)
 %Takes an object file and attempts to produce an image
 %   path_to_obj: File path to object file
 %   height: Output Image height
 %   width: Output Image Width
+%   az: azimuth of the face object
+%   el: elevation of the face object
 
-    % Get face information
+    % Get polygon-face information
     [V,C,F] = read_vertices_and_faces_from_obj_file(path_to_obj);
-    az = -40; el = -40;
     A = viewmtx(az, el);
     vdim4 = [V ones(size(V,1), 1)];
     vdim4 = vdim4';
@@ -31,24 +32,24 @@ function [ image ] = obj_to_im( path_to_obj, height, width )
     end
     vector_indicies = vector_indicies+1;
 
-%     % Assign each pixel values based on the corresponding verticies
-%     image = zeros(height, width, 3);
-%     for vec = 1:sz_verticies(1)
-%         image_x = vector_indicies(vec, 1);
-%         image_y = vector_indicies(vec, 2);
-%         colors = reshape(C(vec, :), 1, 1, 3);
-%         if image(image_x, image_y) == 0
-%             image(image_x, image_y, :) = colors;
-%         else
-%             image(image_x, image_y, :) = (image(image_x, image_y, :) + colors)/2;
-%         end
-%     end
-
     % Assign each pixel values based on the corresponding faces
     image = zeros(height, width, 3);
     for face = 1:sz_faces(1)
+        
+       % Get region of interest for this face
        x_vec = double([vector_indicies(F(face, 1), 1); vector_indicies(F(face, 2),1); vector_indicies(F(face, 3), 1)]);
        y_vec = double([vector_indicies(F(face, 1), 2); vector_indicies(F(face, 2),2); vector_indicies(F(face, 3), 2)]);
+       [min_x, argmin] = min(x_vec);
+       x_vec(argmin) = min_x-1;
+       [max_x, argmax] = max(x_vec);
+       x_vec(argmax) = max_x+1;
+       [min_y, argmin] = min(y_vec);
+       y_vec(argmin) = min_y-1;
+       [max_y, argmax] = max(y_vec);
+       y_vec(argmax) = max_y+1;       
+       
+       % Replace ROI with the average of the current image content place
+       % the content of the face
        mask = poly2mask(x_vec, y_vec, height, width);
        color = (C(F(face,1), :) + C(F(face, 2), :) + C(F(face, 3), :))/3;
        masked_image = image .* mask;
