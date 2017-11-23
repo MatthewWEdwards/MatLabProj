@@ -1,4 +1,10 @@
-clear all;
+close all
+clear
+
+load('mask_im.mat')
+
+figure
+
 global bboxPolygonEyes;
 global bboxPolygonNose;
 
@@ -19,10 +25,12 @@ cam = webcam();
 
 % Capture one frame to get its size.
 videoFrame = snapshot(cam);
+videoFrame2 = snapshot(cam);
 frameSize = size(videoFrame);
 
 % Create the video player object.
 videoPlayer = vision.VideoPlayer('Position', [100 100 [frameSize(2), frameSize(1)]+30]);
+videoPlayer2 = vision.VideoPlayer('Position', [100 100 [frameSize(2), frameSize(1)]+30]);
 
 runLoop = true;
 numPtsFace = 0;
@@ -34,6 +42,7 @@ while runLoop && frameCount < 400
 
     % Get the next frame.
     videoFrame = snapshot(cam);
+    videoFrame2 = snapshot(cam);
     videoFrameGray = rgb2gray(videoFrame);
     frameCount = frameCount + 1;
 
@@ -272,6 +281,37 @@ while runLoop && frameCount < 400
 
     % Display the annotated video frame using the video player object.
     step(videoPlayer, videoFrame);
+    
+    
+    % Add mask to videoFrame2
+    if exist('mask_im', 'var') == 1
+        top_line_slope = (bboxPoints(2,2) - bboxPoints(1, 2))/(bboxPoints(1,2) - bboxPoints(1,1));
+        left_most_point_val = min(xyPoints(:, 1));
+        right_most_point_val = max(xyPoints(:,1));
+        top_most_point_val = min(xyPoints(:, 2));
+        bottom_most_point_val = max(xyPoints(:,2));
+        
+        % Assume: mask_im is of type double
+        box_points = uint16(bboxPoints);
+        box_left_pt = min(box_points(:,1));
+        box_right_pt = max(box_points(:,1));
+        box_top_pt = min(box_points(:,2));
+        box_bottom_pt = max(box_points(:,2));
+        
+        num_rows = box_bottom_pt - box_top_pt;
+        num_cols = box_right_pt - box_left_pt;
+        mask_resize = imresize(mask_im, [num_rows, num_cols]);
+        mask = sum(mask_resize, 3) > 0.2; 
+        videoFrame2(box_top_pt:box_bottom_pt-1, box_left_pt:box_right_pt-1, :) = ...
+            videoFrame2(box_top_pt:box_bottom_pt-1, box_left_pt:box_right_pt-1, :) .* ...
+            uint8(~mask);
+        videoFrame2(box_top_pt:box_bottom_pt-1, box_left_pt:box_right_pt-1, :) = ...
+            videoFrame2(box_top_pt:box_bottom_pt-1, box_left_pt:box_right_pt-1, :)+   ... 
+            uint8(255*mask_resize);
+        figure(1)
+        imshow(videoFrame2)
+    end
+    step(videoPlayer2, videoFrame2);
 
     % Check whether the video player window has been closed.
     runLoop = isOpen(videoPlayer);
@@ -280,5 +320,6 @@ end
 % Clean up.
 clear cam;
 release(videoPlayer);
+release(videoPlayer2);
 release(pointTrackerFace);
 release(faceDetector);
