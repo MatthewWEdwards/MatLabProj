@@ -3,17 +3,13 @@ clear
 
 load('mask_im.mat')
 
-figure
-
 global bboxPolygonEyes;
 global bboxPolygonNose;
-
 
 % Create the face detector object.
 faceDetector = vision.CascadeObjectDetector();
 eyeDetector = vision.CascadeObjectDetector('EyePairSmall','UseROI',true);
 noseDetector = vision.CascadeObjectDetector('Nose','UseROI',true);
-
 
 % Create the point tracker object.
 pointTrackerFace = vision.PointTracker('MaxBidirectionalError', 2);
@@ -25,7 +21,7 @@ cam = webcam();
 
 % Capture one frame to get its size.
 videoFrame = snapshot(cam);
-videoFrame2 = snapshot(cam);
+maskFrame = snapshot(cam);
 frameSize = size(videoFrame);
 
 % Create the video player object.
@@ -42,7 +38,7 @@ while runLoop && frameCount < 400
 
     % Get the next frame.
     videoFrame = snapshot(cam);
-    videoFrame2 = snapshot(cam);
+    maskFrame = snapshot(cam);
     videoFrameGray = rgb2gray(videoFrame);
     frameCount = frameCount + 1;
 
@@ -113,7 +109,6 @@ while runLoop && frameCount < 400
             oldPoints = visiblePoints;
             setPoints(pointTrackerFace, oldPoints);
         end
-
     end
     
     if numPtsEyes < 10
@@ -282,36 +277,49 @@ while runLoop && frameCount < 400
     % Display the annotated video frame using the video player object.
     step(videoPlayer, videoFrame);
     
-    
     % Add mask to videoFrame2
     if exist('mask_im', 'var') == 1
-        top_line_slope = (bboxPoints(2,2) - bboxPoints(1, 2))/(bboxPoints(1,2) - bboxPoints(1,1));
-        left_most_point_val = min(xyPoints(:, 1));
-        right_most_point_val = max(xyPoints(:,1));
-        top_most_point_val = min(xyPoints(:, 2));
-        bottom_most_point_val = max(xyPoints(:,2));
+        frame_sz = size(maskFrame);
+       
+        % Get points from the face bounding box
+        box_points = int32(bboxPoints);
+        b_tl = box_points(1, :);
+        b_tr = box_points(2, :);     
+        b_br = box_points(3, :);
+        b_bl = box_points(4, :);
         
-        % Assume: mask_im is of type double
-        box_points = uint16(bboxPoints);
-        box_left_pt = min(box_points(:,1));
-        box_right_pt = max(box_points(:,1));
-        box_top_pt = min(box_points(:,2));
-        box_bottom_pt = max(box_points(:,2));
+        % Bounding box information from points
+        b_center = floor((b_br + b_tl)/2);
+        hor_length = int32(sqrt(double(((b_tl(1) - b_tr(1))^2 + (b_tl(2) - b_tr(2))^2))));
+        ver_length = int32(sqrt(double(((b_tl(1) - b_bl(1))^2 + (b_tl(2) - b_bl(2))^2))));
+        top_line_slope = double(b_tr(2) - b_tl(2))/double(b_tl(2) - b_tl(1));
         
-        num_rows = box_bottom_pt - box_top_pt;
-        num_cols = box_right_pt - box_left_pt;
-        mask_resize = imresize(mask_im, [num_rows, num_cols]);
-        mask = sum(mask_resize, 3) > 0.2; 
-        videoFrame2(box_top_pt:box_bottom_pt-1, box_left_pt:box_right_pt-1, :) = ...
-            videoFrame2(box_top_pt:box_bottom_pt-1, box_left_pt:box_right_pt-1, :) .* ...
-            uint8(~mask);
-        videoFrame2(box_top_pt:box_bottom_pt-1, box_left_pt:box_right_pt-1, :) = ...
-            videoFrame2(box_top_pt:box_bottom_pt-1, box_left_pt:box_right_pt-1, :)+   ... 
-            uint8(255*mask_resize);
-        figure(1)
-        imshow(videoFrame2)
+        % Resize mask based on detected face
+        mask_resize = imresize(mask_im, [ver_length, hor_length]);
+        mask_resize = imrotate(mask_resize, atan(top_line_slope)*90/pi);
+        pad_size_pre = double([b_center(2) - (ver_length/2), b_center(1) - (hor_length/2)]);
+        pad_size_post = double([frame_sz(1) - b_center(2) - (ver_length/2), frame_sz(2) - b_center(1) - (hor_length/2)]);
+        mask_fullframe = padarray(mask_resize, pad_size_pre, 0,'pre');
+        mask_fullframe = padarray(mask_fullframe, pad_size_post, 0,'post');
+        mask_fullframe = imresize(mask_fullframe,[frame_sz(1) frame_sz(2)]);
+      
+        % Create logical mask from the image mask overlay
+        mask = sum(mask_fullframe, 3) > 0.2; 
+        masked_frame = maskFrame.*uint8(mask);
+        
+        % Adjust mask luminance based on the luminance in the videoframe
+        face_avg_lum = double(mean(mean(mean(masked_frame))))/255;
+        mask_avg_lum = double(mean(mean(mean(mask_fullframe))));
+        mask_fullframe(:,:,1) = mask_fullframe(:,:,1)*(face_avg_lum/mask_avg_lum);
+        mask_fullframe(:,:,2) = mask_fullframe(:,:,2)*(face_avg_lum/mask_avg_lum);
+        mask_fullframe(:,:,3) = mask_fullframe(:,:,3)*(face_avg_lum/mask_avg_lum);
+        
+        % Add mask to videoframe
+        maskFrame = maskFrame .* uint8(~mask);
+        maskFrame = maskFrame + uint8(255*mask_fullframe);
+        
     end
-    step(videoPlayer2, videoFrame2);
+    step(videoPlayer2, maskFrame);
 
     % Check whether the video player window has been closed.
     runLoop = isOpen(videoPlayer);
