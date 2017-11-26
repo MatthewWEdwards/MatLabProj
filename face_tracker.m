@@ -5,6 +5,10 @@ load('mask_im.mat')
 
 global bboxPolygonEyes;
 global bboxPolygonNose;
+global azimuth;
+global elevation;
+
+azimuth = 0;
 
 % Create the face detector object.
 faceDetector = vision.CascadeObjectDetector();
@@ -294,8 +298,18 @@ while runLoop && frameCount < 400
         ver_length = int32(sqrt(double(((b_tl(1) - b_bl(1))^2 + (b_tl(2) - b_bl(2))^2))));
         top_line_slope = double(b_tr(2) - b_tl(2))/double(b_tl(2) - b_tl(1));
         
+        % Retrieve image based on orientation of the face
+        sampled_azimuth = int8((180.0*azimuth/pi)/1)*1;
+        if sampled_azimuth > 50 
+           sampled_azimuth =  50;
+        end
+        if sampled_azimuth < -50
+           sampled_azimuth = -50;
+        end
+        mask = double(imread(strcat('mesh_test/2mask_im_az',num2str(sampled_azimuth),'.png')))./(255.0);
+        
         % Resize mask based on detected face
-        mask_resize = imresize(mask_im, [ver_length, hor_length]);
+        mask_resize = imresize(mask, [ver_length, hor_length]);
         mask_resize = imrotate(mask_resize, atan(top_line_slope)*90/pi);
         pad_size_pre = double([b_center(2) - (ver_length/2), b_center(1) - (hor_length/2)]);
         pad_size_post = double([frame_sz(1) - b_center(2) - (ver_length/2), frame_sz(2) - b_center(1) - (hor_length/2)]);
