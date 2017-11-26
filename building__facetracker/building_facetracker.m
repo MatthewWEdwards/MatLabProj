@@ -1,6 +1,9 @@
 close all
 clear
 
+showAnnotatedVid = true;
+showMaskVid = false;
+
 try
     % Create the webcam object.
     cam = webcam();
@@ -9,8 +12,16 @@ try
     videoFrame = snapshot(cam);
     frameSize = size(videoFrame);
     
-    % Create the video player object.
-    videoPlayer = vision.VideoPlayer('Position', [100 100 [frameSize(2), frameSize(1)]+30]);
+    % Create specified video players.
+    if(showAnnotatedVid)
+        videoPlayerAnnotated = vision.VideoPlayer('Position', ...
+            [100 100 [frameSize(2), frameSize(1)]+30]);
+    end
+    if(showMaskVid)
+        load('mask_im.mat');
+        videoPlayerMask = vision.VideoPlayer('Position', ...
+            [100 100 [frameSize(2), frameSize(1)]+30]);
+    end
     
     runLoop = true;
     frameCount = 0;
@@ -30,14 +41,21 @@ try
         % track face
         faceTracker = faceTracker.Step(videoFrameGray);
         
-        % add annotated face data to video frame
-        videoFrame_ann = addAnnotatedFaceDataToVideo(faceTracker, videoFrame);
-        
         % Display the annotated video frame using the video player object.
-        step(videoPlayer, videoFrame_ann);
+        if(showAnnotatedVid)
+            videoFrame_ann = faceTracker.annotateData(videoFrame);
+            step(videoPlayerAnnotated, videoFrame_ann);
+        end
         
-        % Check whether the video player window has been closed.
-        runLoop = isOpen(videoPlayer);
+        % generate mask
+        if(showMaskVid)
+            [az, el] = faceTracker.estimateFaceOrientation();
+            
+        end
+
+        % Check that any video players we specified are still open.
+        runLoop = (showAnnotatedVid && isOpen(videoPlayerAnnotated)) || ...
+                  (showMaskVid && isOpen(videoPlayerMask));
     end
 catch EX
     clean();
@@ -46,31 +64,11 @@ end
 clean();
 
 function [] = clean()
-    if(exist('videoPlayer', 'var'))
-        release(videoPlayer);
+    if(exist('videoPlayerAnnotated', 'var'))
+        release(videoPlayerAnnotated);
+    end 
+    if(exist('videoPlayerMask', 'var'))
+        release(videoPlayerMask);
     end    
     clear cam;
-end
-
-function [videoFrame] = addAnnotatedFaceDataToVideo(faceTracker, videoFrame)
-    % ADD FACE DATA
-    % Display a bounding box around the face being tracked.
-    videoFrame = insertShape(videoFrame, 'Polygon', ...
-        faceTracker.FaceDetector.BboxPolygon, 'LineWidth', 3);
-    
-    % Display tracked points.
-    videoFrame = insertMarker(videoFrame, ...
-        faceTracker.FaceDetector.OldPts, '+', 'Color', 'white');
-    
-    % ADD EYES DATA
-    videoFrame = insertShape(videoFrame, 'Polygon', ...
-        faceTracker.EyesDetector.BboxPolygon, 'LineWidth', 3);
-    videoFrame = insertMarker(videoFrame, ...
-        faceTracker.EyesDetector.OldPts, '+', 'Color', 'blue');
-    
-    % ADD NOSE DATA
-    videoFrame = insertShape(videoFrame, 'Polygon', ...
-        faceTracker.NoseDetector.BboxPolygon, 'LineWidth', 3);
-    videoFrame = insertMarker(videoFrame, ...
-        faceTracker.NoseDetector.OldPts, '+', 'Color', 'white');
 end

@@ -277,7 +277,7 @@ while runLoop && frameCount < 400
         yNoseAvg = (bboxPolygonNose(2) + bboxPolygonNose(4) + bboxPolygonNose(6) + bboxPolygonNose(8)) / 4;
         azimuth = atan((xNoseAvg - xEyesAvg)/(yNoseAvg - yEyesAvg));
         elevation = atan((yNoseAvg - yEyesAvg)/(10));
-        answer = [azimuth elevation]
+       % answer = [azimuth elevation];
     end
 
     % Display the annotated video frame using the video player object.

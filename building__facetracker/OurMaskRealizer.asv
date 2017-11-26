@@ -1,0 +1,13 @@
+classdef OurMaskRealizer
+    %OURMASKREALIZER 
+    
+    properties
+        FaceDetector
+    end
+    
+    methods
+        obj 
+    end
+    
+end
+

@@ -2,35 +2,57 @@ classdef OurFaceTracker
     %OURFACETRACKER
     
     properties
-        FeatureDetectors
+        FaceDetector
+        EyesDetector
+        NoseDetector
         DetectOrTrackThreshold
     end
     
     methods
-        function obj = OurFaceTracker(faceCascDetector, eyesCascDetector, noseCascDetector)
-            faceDetector = OurObjDetector(faceCascDetector);
-            eyesDetector = OurObjDetector(eyesCascDetector);
-            noseDetector = OurObjDetector(noseCascDetector);
+        function obj = OurFaceTracker(faceCascDetector, eyesCascDetector, noseCascDetector, frameSize)
+            obj.FaceDetector = OurObjDetector(faceCascDetector, frameSize, 10);
+            obj.EyesDetector = OurObjDetector(eyesCascDetector, frameSize, 10);
+            obj.NoseDetector = OurObjDetector(noseCascDetector, frameSize, 10);
             
-            obj.FeatureDetectors = containers.Map( ...
-              {'Face', 'Eyes', 'Nose'}, ... 
-              {faceDetector, eyesDetector, noseDetector} ...
-            );
-        
             obj.DetectOrTrackThreshold = 10;
         end
         
         function obj = Step(obj, videoFrameGray)
-            featureDetectors = values(obj.FeatureDetectors);
-            for i=1:length(featureDetectors)
-                if(featureDetectors(i).NumPts < obj.DetectOrTrackThreshold)
-                   featureDetectors(i) = featureDetectors(i).Detect(videoFrameGray); 
-                else
-                    featureDetectors(i) = featureDetector(i).Track(videoFrameGray);
-                end
+            if(obj.FaceDetector.NumPts < obj.DetectOrTrackThreshold)
+               obj.FaceDetector = obj.FaceDetector.DetectRaw(videoFrameGray); 
+            else
+                obj.FaceDetector = obj.FaceDetector.Track(videoFrameGray);
+            end
+            
+            if(obj.EyesDetector.NumPts < obj.DetectOrTrackThreshold)
+               obj.EyesDetector = obj.EyesDetector.DetectInBbox(...
+                   videoFrameGray, obj.FaceDetector.Bbox); 
+            else
+                obj.EyesDetector = obj.EyesDetector.Track(videoFrameGray);
+            end
+            
+            if(obj.NoseDetector.NumPts < obj.DetectOrTrackThreshold)
+                obj.NoseDetector = obj.NoseDetector.DetectInBbox(...
+                    videoFrameGray, obj.FaceDetector.Bbox);
+            else
+                obj.NoseDetector = obj.NoseDetector.Track(videoFrameGray);
             end
         end
-     
+        
+        function videoFrame = annotateData(obj, videoFrame)
+            videoFrame = obj.annotateDetectorData(videoFrame, obj.FaceDetector, 'white');
+            videoFrame = obj.annotateDetectorData(videoFrame, obj.EyesDetector, 'blue');
+            videoFrame = obj.annotateDetectorData(videoFrame, obj.NoseDetector, 'white');
+        end
+        
+        function videoFrame = annotateDetectorData(~, videoFrame, detector, ptClr)
+            videoFrame = insertShape(videoFrame, 'Polygon', ...
+                detector.BboxPolygon, 'LineWidth', 3);
+            videoFrame = insertMarker(videoFrame, ...
+                detector.OldPts, '+', 'Color', ptClr);
+        end
+        
+        function
     end
     
 end
