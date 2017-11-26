@@ -34,7 +34,7 @@ videoPlayer2 = vision.VideoPlayer('Position', [100 100 [frameSize(2), frameSize(
 
 runLoop = true;
 numPtsFace = 0;
-numPtsEyes = 0;
+numPtsEyes = 0; 
 numPtsNose = 0;
 frameCount = 0;
 
@@ -265,6 +265,8 @@ while runLoop && frameCount < 400
         end
 
     end
+    
+    
     if(size(bboxPolygonEyes,2) == 8 && size(bboxPolygonNose,2) == 8)
         %[x1 y1 x2 y2 x3 y3 x4 y4]
       %  answer1 = bboxPolygonEyes

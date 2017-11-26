@@ -1,0 +1,37 @@
+classdef OurFaceTracker
+    %OURFACETRACKER
+    
+    properties
+        FeatureDetectors
+        DetectOrTrackThreshold
+    end
+    
+    methods
+        function obj = OurFaceTracker(faceCascDetector, eyesCascDetector, noseCascDetector)
+            faceDetector = OurObjDetector(faceCascDetector);
+            eyesDetector = OurObjDetector(eyesCascDetector);
+            noseDetector = OurObjDetector(noseCascDetector);
+            
+            obj.FeatureDetectors = containers.Map( ...
+              {'Face', 'Eyes', 'Nose'}, ... 
+              {faceDetector, eyesDetector, noseDetector} ...
+            );
+        
+            obj.DetectOrTrackThreshold = 10;
+        end
+        
+        function obj = Step(obj, videoFrameGray)
+            featureDetectors = values(obj.FeatureDetectors);
+            for i=1:length(featureDetectors)
+                if(featureDetectors(i).NumPts < obj.DetectOrTrackThreshold)
+                   featureDetectors(i) = featureDetectors(i).Detect(videoFrameGray); 
+                else
+                    featureDetectors(i) = featureDetector(i).Track(videoFrameGray);
+                end
+            end
+        end
+     
+    end
+    
+end
+
