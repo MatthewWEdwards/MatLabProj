@@ -3,12 +3,15 @@ classdef OurMaskRealizer
     
     properties
         MaskMapAz
+        Handlebar
+        HandlebarAlpha
     end
     
     methods
         function obj = OurMaskRealizer()
             load('MaskMap_Azimuth.mat');
             obj.MaskMapAz = maskMap;
+            [obj.Handlebar, ~, obj.HandlebarAlpha] = imread('handlebar.png');
         end
         
         function videoFrame = AddMask(obj, videoFrame, faceTracker)
@@ -33,7 +36,24 @@ classdef OurMaskRealizer
             end
             maskIm = obj.MaskMapAz(sampled_azimuth);
         end
-        
+       
+        function videoFrame = AddMoustache(obj, videoFrame, faceTracker)
+            try
+                philtrumLoc = faceTracker.HandlebarLoc();
+                % resize stache
+                stache = imresize(obj.Handlebar, [70 NaN]);
+                sz = size(stache);
+                offset = uint8(sz(1:2)/2);
+                % mount!
+                mountLoc = uint16(philtrumLoc) - uint16(offset);
+                stacheMask = uint8(imresize(obj.HandlebarAlpha,  sz(1:2)) > 0);
+                videoFrame(mountLoc(1):mountLoc(1)+sz(1) - 1,mountLoc(2):mountLoc(2)+sz(2) - 1, :) = ...
+                    stacheMask .* stache + (1 - stacheMask).*...
+                    videoFrame(mountLoc(1):mountLoc(1)+sz(1) - 1,mountLoc(2):mountLoc(2)+sz(2) - 1, :);
+            catch EX
+                
+            end
+        end
     end
 end
 
@@ -42,12 +62,26 @@ function videoFrame = blendMaskWithFrame(videoFrame, matchedMask)
 mask = sum(matchedMask, 3) > 0.2;
 masked_frame = videoFrame.*uint8(mask);
 
-% Adjust mask luminance based on the luminance in the videoframe
-face_avg_lum = double(mean(mean(mean(masked_frame))))/255;
-mask_avg_lum = double(mean(mean(mean(matchedMask))));
-matchedMask(:,:,1) = matchedMask(:,:,1)*(face_avg_lum/mask_avg_lum);
-matchedMask(:,:,2) = matchedMask(:,:,2)*(face_avg_lum/mask_avg_lum);
-matchedMask(:,:,3) = matchedMask(:,:,3)*(face_avg_lum/mask_avg_lum);
+% Adjust mask luminance based on the luminance in the videoframe, block by
+% block
+blockSize = [64 64];
+for colorDim = 1:3
+    faceCols = im2col(masked_frame(:,:,colorDim), blockSize, 'distinct');
+    maskCols = im2col(matchedMask(:,:,colorDim), blockSize, 'distinct');
+    faceAvg = double(mean(faceCols, 1))/255;
+    maskAvg = double(mean(maskCols, 1));
+    adjustVec = double((maskAvg ~= 0)).*faceAvg./maskAvg;
+    adjustVec(isnan(adjustVec)) = 1;
+    adjustMat = repmat(adjustVec, size(faceCols, 1),1);
+    adjustReshaped = col2im(adjustMat, blockSize, size(matchedMask(:,:,colorDim)), 'distinct');
+    matchedMask(:,:,colorDim) = matchedMask(:,:,colorDim).*adjustReshaped;
+end
+
+% face_avg_lum = double(mean(mean(mean(masked_frame))))/255;
+% mask_avg_lum = double(mean(mean(mean(matchedMask))));
+% matchedMask(:,:,1) = matchedMask(:,:,1)*(face_avg_lum/mask_avg_lum);
+% matchedMask(:,:,2) = matchedMask(:,:,2)*(face_avg_lum/mask_avg_lum);
+% matchedMask(:,:,3) = matchedMask(:,:,3)*(face_avg_lum/mask_avg_lum);
 
 % Add mask to videoframe
 videoFrame = videoFrame .* uint8(~mask);

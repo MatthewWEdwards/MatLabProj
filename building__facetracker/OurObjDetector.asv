@@ -84,11 +84,8 @@ classdef OurObjDetector
             % the orientation of the face.
             if(size(bbox) ~= 0)
                 bboxPts = bbox2points(obj.Bbox(1, :));
-                obj.UpdateBboxPtData(bboxPts);
-            else
-                bboxPts = zeros()
-            
-            
+                obj = obj.UpdateBboxPtData(bboxPts);  
+            end                        
         end
         
         function obj = UpdateBboxPtData(obj, bboxPts)
@@ -97,6 +94,15 @@ classdef OurObjDetector
             % Convert the box corners into the [x1 y1 x2 y2 x3 y3 x4 y4]
             % format required by insertShape.
             obj.BboxPolygon = reshape(obj.BboxPts', 1, []);
+        end
+        
+        function bool = hasObj(obj)
+            bool = obj.NumPts >= obj.TrackThreshold;
+        end
+        
+        function center = BboxCenter(obj)
+            [geom,~,~] = polygeom(obj.BboxPts(:,1), obj.BboxPts();
+            center = geom(2:3);
         end
     end
     

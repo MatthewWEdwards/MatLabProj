@@ -73,6 +73,16 @@ classdef OurFaceTracker
                    obj.EyesDetector.hasObj() && ...
                    obj.NoseDetector.hasObj();
         end
+        
+        function handlebarMountLoc = HandlebarLoc(obj)
+            noseCenter = obj.NoseDetector.BboxCenter();
+            eyesCenter = obj.EyesDetector.BboxCenter();
+            eyeNoseVec = noseCenter - eyesCenter; 
+            mag = sqrt(sum(eyeNoseVec.^2));
+            eyeNoseVecNorm = eyeNoseVec/mag;
+            % locate philtrum down eye-nose line from noseCenter
+            handlebarMountLoc = noseCenter + 22*eyeNoseVecNorm;
+        end     
     end
     
 end

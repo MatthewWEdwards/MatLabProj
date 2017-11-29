@@ -11,6 +11,7 @@ try
     
     runLoop = true;
     frameCount = 0;
+    moustacheMode = true;
     
     % Create the face tracker object.
     faceDetector = vision.CascadeObjectDetector();
@@ -23,7 +24,7 @@ try
     maskRealizer = OurMaskRealizer();
     
     [showL, showR, vidFig] = SideBySideVideo('FaceMask JaviMaCoop', 'Face Data', 'FaceMask Video', ...
-        'Toggle Nothing', @(nothing) nothing);
+        'Toggle Stache Mode', @toggleMoustache);
     
     while runLoop && frameCount < 400
         frameCount = frameCount + 1;
@@ -37,7 +38,11 @@ try
         % Display the annotated video frame using the video player object.
         if(faceTracker.hasFace())
             videoFrame_ann = faceTracker.annotateData(videoFrame);
-            videoFrame_mask = maskRealizer.AddMask(videoFrame, faceTracker);
+            if(moustacheMode)
+                videoFrame_mask = maskRealizer.AddMoustache(videoFrame, faceTracker);
+            else
+                videoFrame_mask = maskRealizer.AddMask(videoFrame, faceTracker);
+            end
         else
             videoFrame_ann = insertText(videoFrame,[550, 380],'No face detected.',...
                 'BoxColor', 'Red', 'TextColor', 'White', 'FontSize', 18);
@@ -56,8 +61,8 @@ catch EX
 end
 clean();
 
-function toggleMask(~, ~)
-    fprintf('test');
+function toggleMoustache(~,~)
+      evalin('base', 'moustacheMode = ~moustacheMode');  
 end
 
 function clean()

@@ -99,6 +99,11 @@ classdef OurObjDetector
         function bool = hasObj(obj)
             bool = obj.NumPts >= obj.TrackThreshold;
         end
+        
+        function center = BboxCenter(obj)
+            [geom,~,~] = polygeom(obj.BboxPts(:,1), obj.BboxPts(:,2));
+            center = fliplr(geom(2:3)); % x coord is row (2nd dim), etc
+        end
     end
     
 end

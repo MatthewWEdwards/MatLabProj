@@ -20,10 +20,10 @@ try
     
     % initialize mask functionality
     load('mask_im.mat');
-    maskRealizer = OurMaskRealizer(faceTracker);
+    maskRealizer = OurMaskRealizer();
     
     [showL, showR, vidFig] = SideBySideVideo('FaceMask JaviMaCoop', 'Face Data', 'FaceMask Video', ...
-        'Toggle Nothing', @(nothing) nothing);
+        'Toggle Stache Mode', @toggleMoustache);
     
     while runLoop && frameCount < 400
         frameCount = frameCount + 1;
@@ -37,16 +37,20 @@ try
         % Display the annotated video frame using the video player object.
         if(faceTracker.hasFace())
             videoFrame_ann = faceTracker.annotateData(videoFrame);
+            if(moustacheMode)
+                videoFrame_mask = maskRealizer.AddMoustache(videoFrame, faceTracker);
+            else
+                videoFrame_mask = maskRealizer.AddMask(videoFrame, faceTracker);
+            end
         else
-            videoFrame_ann = insertText(videoFrame,int(,'No face detected.',...
+            videoFrame_ann = insertText(videoFrame,[550, 380],'No face detected.',...
+                'BoxColor', 'Red', 'TextColor', 'White', 'FontSize', 18);
+            videoFrame_mask = insertText(videoFrame,[550, 380],'No face detected.',...
                 'BoxColor', 'Red', 'TextColor', 'White', 'FontSize', 18);
         end
         showL(videoFrame_ann);
-        
-        % generate mask
-        videoFrame_mask = maskRealizer.AddMask(videoFrame);
         showR(videoFrame_mask);
-
+        
         % Check that video-playing figure is still open
         runLoop = ismember(findall(0,'type','figure'),vidFig);
     end
@@ -56,9 +60,9 @@ catch EX
 end
 clean();
 
-function toggleMask(~, ~)
-    fprintf('test');
-end
+function toggleMoustache(~,~)
+        
+    end
 
 function clean()
     % just some hacky MATLAB workspace stuff so that I can

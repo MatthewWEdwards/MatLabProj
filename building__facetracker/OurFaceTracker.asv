@@ -11,7 +11,7 @@ classdef OurFaceTracker
     
     methods
         function obj = OurFaceTracker(faceCascDetector, eyesCascDetector, noseCascDetector, frameSize)
-            obj.Fra
+            obj.FrameSize = frameSize;
             obj.FaceDetector = OurObjDetector(faceCascDetector, frameSize, 10);
             obj.EyesDetector = OurObjDetector(eyesCascDetector, frameSize, 10);
             obj.NoseDetector = OurObjDetector(noseCascDetector, frameSize, 10);
@@ -73,6 +73,11 @@ classdef OurFaceTracker
                    obj.EyesDetector.hasObj() && ...
                    obj.NoseDetector.hasObj();
         end
+        
+        function handlebarMountLoc = HandlebarLoc(obj)
+            noseCen = obj.NoseDetector.Center();
+            eyesCen = obj.EyesDetector.Center();
+        end     
     end
     
 end
