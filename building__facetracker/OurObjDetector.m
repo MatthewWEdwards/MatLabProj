@@ -95,6 +95,10 @@ classdef OurObjDetector
             % format required by insertShape.
             obj.BboxPolygon = reshape(obj.BboxPts', 1, []);
         end
+        
+        function bool = hasObj(obj)
+            bool = obj.NumPts >= obj.TrackThreshold;
+        end
     end
     
 end

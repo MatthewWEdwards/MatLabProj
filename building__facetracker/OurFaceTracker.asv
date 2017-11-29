@@ -5,11 +5,13 @@ classdef OurFaceTracker
         FaceDetector
         EyesDetector
         NoseDetector
+        FrameSize
         DetectOrTrackThreshold
     end
     
     methods
         function obj = OurFaceTracker(faceCascDetector, eyesCascDetector, noseCascDetector, frameSize)
+            obj.Fra
             obj.FaceDetector = OurObjDetector(faceCascDetector, frameSize, 10);
             obj.EyesDetector = OurObjDetector(eyesCascDetector, frameSize, 10);
             obj.NoseDetector = OurObjDetector(noseCascDetector, frameSize, 10);
@@ -52,7 +54,25 @@ classdef OurFaceTracker
                 detector.OldPts, '+', 'Color', ptClr);
         end
         
-        function
+        function [azimuth, elevation] = EstimateFaceOrientation(obj)
+            bboxPolygonEyes = obj.EyesDetector.BboxPolygon;
+            bboxPolygonNose = obj.NoseDetector.BboxPolygon;
+            if(size(bboxPolygonEyes,2) == 8 && size(bboxPolygonNose,2) == 8)
+                xEyesAvg = (bboxPolygonEyes(1) + bboxPolygonEyes(3) + bboxPolygonEyes(5) + bboxPolygonEyes(7)) / 4;
+                yEyesAvg = (bboxPolygonEyes(2) + bboxPolygonEyes(4) + bboxPolygonEyes(6) + bboxPolygonEyes(8)) / 4;
+                
+                xNoseAvg = (bboxPolygonNose(1) + bboxPolygonNose(3) + bboxPolygonNose(5) + bboxPolygonNose(7)) / 4;
+                yNoseAvg = (bboxPolygonNose(2) + bboxPolygonNose(4) + bboxPolygonNose(6) + bboxPolygonNose(8)) / 4;
+                azimuth = atan((xNoseAvg - xEyesAvg)/(yNoseAvg - yEyesAvg));
+                elevation = atan((yNoseAvg - yEyesAvg)/(10));
+            end
+        end
+        
+        function bool = hasFace(obj)
+            bool = obj.FaceDetector.hasObj() && ...
+                   obj.EyesDetector.hasObj() && ...
+                   obj.NoseDetector.hasObj();
+        end
     end
     
 end

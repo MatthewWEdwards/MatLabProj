@@ -1,17 +1,13 @@
 close all
-clear
+clear all
 
 try
-    
     % Create the webcam object.
     cam = webcam();
     
     % Capture one frame to get its size.
     videoFrame = snapshot(cam);
     frameSize = size(videoFrame);
-    
-    % Create the video player object.
-    videoPlayer = vision.VideoPlayer('Position', [100 100 [frameSize(2), frameSize(1)]+30]);
     
     runLoop = true;
     frameCount = 0;
@@ -22,6 +18,13 @@ try
     noseDetector = vision.CascadeObjectDetector('Nose','UseROI',true);
     faceTracker = OurFaceTracker(faceDetector, eyeDetector, noseDetector, frameSize);
     
+    % initialize mask functionality
+    load('mask_im.mat');
+    maskRealizer = OurMaskRealizer(faceTracker);
+    
+    [showL, showR, vidFig] = SideBySideVideo('FaceMask JaviMaCoop', 'Face Data', 'FaceMask Video', ...
+        'Toggle Nothing', @(nothing) nothing);
+    
     while runLoop && frameCount < 400
         frameCount = frameCount + 1;
         % Get the next frame.
@@ -31,45 +34,46 @@ try
         % track face
         faceTracker = faceTracker.Step(videoFrameGray);
         
-        % add annotated face data to video frame
-        videoFrame_ann = addAnnotatedFaceDataToVideo(faceTracker, videoFrame);
-        
         % Display the annotated video frame using the video player object.
-        step(videoPlayer, videoFrame_ann);
+        if(faceTracker.hasFace())
+            videoFrame_ann = faceTracker.annotateData(videoFrame);
+        else
+            videoFrame_ann = insertText(videoFrame,int(,'No face detected.',...
+                'BoxColor', 'Red', 'TextColor', 'White', 'FontSize', 18);
+        end
+        showL(videoFrame_ann);
         
-        % Check whether the video player window has been closed.
-        runLoop = isOpen(videoPlayer);
+        % generate mask
+        videoFrame_mask = maskRealizer.AddMask(videoFrame);
+        showR(videoFrame_mask);
+
+        % Check that video-playing figure is still open
+        runLoop = ismember(findall(0,'type','figure'),vidFig);
     end
 catch EX
-    % Clean up.
-    clear cam;
-    release(videoPlayer);
+    clean();
+    rethrow(EX);
 end
-    
+clean();
 
-function [] = clean()
-
+function toggleMask(~, ~)
+    fprintf('test');
 end
 
-function [videoFrame] = addAnnotatedFaceDataToVideo(faceTracker, videoFrame)
-    % ADD FACE DATA
-    % Display a bounding box around the face being tracked.
-    videoFrame = insertShape(videoFrame, 'Polygon', ...
-        faceTracker.FaceDetector.BboxPolygon, 'LineWidth', 3);
-    
-    % Display tracked points.
-    videoFrame = insertMarker(videoFrame, ...
-        faceTracker.FaceDetector.OldPts, '+', 'Color', 'white');
-    
-    % ADD EYES DATA
-    videoFrame = insertShape(videoFrame, 'Polygon', ...
-        faceTracker.EyesDetector.BboxPolygon, 'LineWidth', 3);
-    videoFrame = insertMarker(videoFrame, ...
-        faceTracker.EyesDetector.OldPts, '+', 'Color', 'blue');
-    
-    % ADD NOSE DATA
-    videoFrame = insertShape(videoFrame, 'Polygon', ...
-        faceTracker.NoseDetector.BboxPolygon, 'LineWidth', 3);
-    videoFrame = insertMarker(videoFrame, ...
-        faceTracker.NoseDetector.OldPts, '+', 'Color', 'white');
+function clean()
+    % just some hacky MATLAB workspace stuff so that I can
+    % clean up without reusing code. Evaluates code in 'base' workspace.
+    try
+        if(evalin('base', 'exist(''videoPlayerAnnotated'', ''var'')'))
+            evalin('base', 'release(videoPlayerAnnotated)');
+        end 
+    end
+    try
+        if(evalin('base', 'exist(''videoPlayerMask'', ''var'')'))
+            evalin('base', 'release(videoPlayerMask)');
+        end 
+    end
+    try
+        evalin('base', 'clear cam');
+    end
 end

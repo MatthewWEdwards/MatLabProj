@@ -5,11 +5,13 @@ classdef OurFaceTracker
         FaceDetector
         EyesDetector
         NoseDetector
+        FrameSize
         DetectOrTrackThreshold
     end
     
     methods
         function obj = OurFaceTracker(faceCascDetector, eyesCascDetector, noseCascDetector, frameSize)
+            obj.FrameSize = frameSize;
             obj.FaceDetector = OurObjDetector(faceCascDetector, frameSize, 10);
             obj.EyesDetector = OurObjDetector(eyesCascDetector, frameSize, 10);
             obj.NoseDetector = OurObjDetector(noseCascDetector, frameSize, 10);
@@ -52,7 +54,7 @@ classdef OurFaceTracker
                 detector.OldPts, '+', 'Color', ptClr);
         end
         
-        function [azimuth, elevation] = estimateFaceOrientation(obj)
+        function [azimuth, elevation] = EstimateFaceOrientation(obj)
             bboxPolygonEyes = obj.EyesDetector.BboxPolygon;
             bboxPolygonNose = obj.NoseDetector.BboxPolygon;
             if(size(bboxPolygonEyes,2) == 8 && size(bboxPolygonNose,2) == 8)
@@ -63,8 +65,13 @@ classdef OurFaceTracker
                 yNoseAvg = (bboxPolygonNose(2) + bboxPolygonNose(4) + bboxPolygonNose(6) + bboxPolygonNose(8)) / 4;
                 azimuth = atan((xNoseAvg - xEyesAvg)/(yNoseAvg - yEyesAvg));
                 elevation = atan((yNoseAvg - yEyesAvg)/(10));
-                
             end
+        end
+        
+        function bool = hasFace(obj)
+            bool = obj.FaceDetector.hasObj() && ...
+                   obj.EyesDetector.hasObj() && ...
+                   obj.NoseDetector.hasObj();
         end
     end
     
