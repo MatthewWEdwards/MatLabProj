@@ -14,9 +14,9 @@ try
     moustacheMode = true;
     
     % Create the face tracker object.
-    faceDetector = vision.CascadeObjectDetector();
-    eyeDetector = vision.CascadeObjectDetector('EyePairSmall','UseROI',true);
-    noseDetector = vision.CascadeObjectDetector('Nose','UseROI',true);
+    faceDetector = vision.CascadeObjectDetector('MergeThreshold', 0);
+    eyeDetector = vision.CascadeObjectDetector('EyePairSmall','UseROI',true, 'MergeThreshold', 0);
+    noseDetector = vision.CascadeObjectDetector('Nose','UseROI',true, 'MergeThreshold', 0);
     faceTracker = OurFaceTracker(faceDetector, eyeDetector, noseDetector, frameSize);
     
     % initialize mask functionality
@@ -46,6 +46,7 @@ try
         else
             videoFrame_ann = insertText(videoFrame,[550, 380],'No face detected.',...
                 'BoxColor', 'Red', 'TextColor', 'White', 'FontSize', 18);
+            videoFrame_ann = faceTracker.annotateData(videoFrame);
             videoFrame_mask = insertText(videoFrame,[550, 380],'No face detected.',...
                 'BoxColor', 'Red', 'TextColor', 'White', 'FontSize', 18);
         end
@@ -53,7 +54,7 @@ try
         showR(videoFrame_mask);
         
         % Check that video-playing figure is still open
-        runLoop = ismember(findall(0,'type','figure'),vidFig);
+        runLoop = numel(ismember(findall(0,'type','figure'),vidFig)) > 0;
     end
 catch EX
     clean();

@@ -42,9 +42,15 @@ classdef OurFaceTracker
         end
         
         function videoFrame = annotateData(obj, videoFrame)
+            try
             videoFrame = obj.annotateDetectorData(videoFrame, obj.FaceDetector, 'white');
+            end
+            try
             videoFrame = obj.annotateDetectorData(videoFrame, obj.EyesDetector, 'blue');
+            end
+            try
             videoFrame = obj.annotateDetectorData(videoFrame, obj.NoseDetector, 'white');
+            end
         end
         
         function videoFrame = annotateDetectorData(~, videoFrame, detector, ptClr)
