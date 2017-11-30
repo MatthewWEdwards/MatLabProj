@@ -62,26 +62,12 @@ function videoFrame = blendMaskWithFrame(videoFrame, matchedMask)
 mask = sum(matchedMask, 3) > 0.2;
 masked_frame = videoFrame.*uint8(mask);
 
-% Adjust mask luminance based on the luminance in the videoframe, block by
-% block
-blockSize = [64 64];
-for colorDim = 1:3
-    faceCols = im2col(masked_frame(:,:,colorDim), blockSize, 'distinct');
-    maskCols = im2col(matchedMask(:,:,colorDim), blockSize, 'distinct');
-    faceAvg = double(mean(faceCols, 1))/255;
-    maskAvg = double(mean(maskCols, 1));
-    adjustVec = double((maskAvg ~= 0)).*faceAvg./maskAvg;
-    adjustVec(isnan(adjustVec)) = 1;
-    adjustMat = repmat(adjustVec, size(faceCols, 1),1);
-    adjustReshaped = col2im(adjustMat, blockSize, size(matchedMask(:,:,colorDim)), 'distinct');
-    matchedMask(:,:,colorDim) = matchedMask(:,:,colorDim).*adjustReshaped;
-end
-
-% face_avg_lum = double(mean(mean(mean(masked_frame))))/255;
-% mask_avg_lum = double(mean(mean(mean(matchedMask))));
-% matchedMask(:,:,1) = matchedMask(:,:,1)*(face_avg_lum/mask_avg_lum);
-% matchedMask(:,:,2) = matchedMask(:,:,2)*(face_avg_lum/mask_avg_lum);
-% matchedMask(:,:,3) = matchedMask(:,:,3)*(face_avg_lum/mask_avg_lum);
+% Adjust mask luminance based on the luminance in the videoframe
+face_avg_lum = double(mean(mean(mean(masked_frame))))/255;
+mask_avg_lum = double(mean(mean(mean(matchedMask))));
+matchedMask(:,:,1) = matchedMask(:,:,1)*(face_avg_lum/mask_avg_lum);
+matchedMask(:,:,2) = matchedMask(:,:,2)*(face_avg_lum/mask_avg_lum);
+matchedMask(:,:,3) = matchedMask(:,:,3)*(face_avg_lum/mask_avg_lum);
 
 % Add mask to videoframe
 videoFrame = videoFrame .* uint8(~mask);
