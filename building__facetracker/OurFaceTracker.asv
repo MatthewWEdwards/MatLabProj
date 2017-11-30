@@ -42,16 +42,23 @@ classdef OurFaceTracker
         end
         
         function videoFrame = annotateData(obj, videoFrame)
+            try
             videoFrame = obj.annotateDetectorData(videoFrame, obj.FaceDetector, 'white');
+            end
+            try
             videoFrame = obj.annotateDetectorData(videoFrame, obj.EyesDetector, 'blue');
+            end
+            try
             videoFrame = obj.annotateDetectorData(videoFrame, obj.NoseDetector, 'white');
+            end
         end
         
         function videoFrame = annotateDetectorData(~, videoFrame, detector, ptClr)
-            videoFrame = insertShape(videoFrame, 'Polygon', ...
-                detector.BboxPolygon, 'LineWidth', 3);
-            videoFrame = insertMarker(videoFrame, ...
-                detector.OldPts, '+', 'Color', ptClr);
+            videoFrame = insertObjectAnnotation(videoFrame, 'rectangle', detector.Bbox, '');
+%             videoFrame = insertShape(videoFrame, 'Polygon', ...
+%                 detector.BboxPolygon, 'LineWidth', 3);
+%             videoFrame = insertMarker(videoFrame, ...
+%                 detector.OldPts, '+', 'Color', ptClr);
         end
         
         function [azimuth, elevation] = EstimateFaceOrientation(obj)
@@ -75,8 +82,13 @@ classdef OurFaceTracker
         end
         
         function handlebarMountLoc = HandlebarLoc(obj)
-            noseCen = obj.NoseDetector.Center();
-            eyesCen = obj.EyesDetector.Center();
+            noseCenter = obj.NoseDetector.BboxCenter();
+            eyesCenter = obj.EyesDetector.BboxCenter();
+            eyeNoseVec = noseCenter - eyesCenter; 
+            mag = sqrt(sum(eyeNoseVec.^2));
+            eyeNoseVecNorm = eyeNoseVec/mag;
+            % locate philtrum down eye-nose line from noseCenter
+            handlebarMountLoc = noseCenter + 22*eyeNoseVecNorm;
         end     
     end
     

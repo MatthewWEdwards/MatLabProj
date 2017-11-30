@@ -43,19 +43,20 @@ classdef OurFaceTracker
         
         function videoFrame = annotateData(obj, videoFrame)
             try
-            videoFrame = obj.annotateDetectorData(videoFrame, obj.FaceDetector, 'white');
+            videoFrame = obj.annotateDetectorData(videoFrame, obj.FaceDetector, 'white', 'Face');
             end
             try
-            videoFrame = obj.annotateDetectorData(videoFrame, obj.EyesDetector, 'blue');
+            videoFrame = obj.annotateDetectorData(videoFrame, obj.EyesDetector, 'blue', 'Eyes');
             end
             try
-            videoFrame = obj.annotateDetectorData(videoFrame, obj.NoseDetector, 'white');
+            videoFrame = obj.annotateDetectorData(videoFrame, obj.NoseDetector, 'white', 'Nose');
             end
         end
         
-        function videoFrame = annotateDetectorData(~, videoFrame, detector, ptClr)
-            videoFrame = insertShape(videoFrame, 'Polygon', ...
-                detector.BboxPolygon, 'LineWidth', 3);
+        function videoFrame = annotateDetectorData(~, videoFrame, detector, ptClr, label)
+            videoFrame = insertObjectAnnotation(videoFrame, 'rectangle', detector.Bbox, label);
+%             videoFrame = insertShape(videoFrame, 'Polygon', ...
+%                 detector.BboxPolygon, 'LineWidth', 3);
             videoFrame = insertMarker(videoFrame, ...
                 detector.OldPts, '+', 'Color', ptClr);
         end
