@@ -43,15 +43,15 @@ mask = sum(matchedMask, 3) > 0.2;
 masked_frame = videoFrame.*uint8(mask);
 
 % Adjust mask luminance based on the luminance in the videoframe
-face_avg_lum = double(mean(mean(mean(masked_frame))))/255;
-mask_avg_lum = double(mean(mean(mean(matchedMask))));
-matchedMask(:,:,1) = matchedMask(:,:,1)*(face_avg_lum/mask_avg_lum);
-matchedMask(:,:,2) = matchedMask(:,:,2)*(face_avg_lum/mask_avg_lum);
-matchedMask(:,:,3) = matchedMask(:,:,3)*(face_avg_lum/mask_avg_lum);
+matchedMask = uint8(matchedMask*255);
+face_ycbcr = rgb2ycbcr(masked_frame);
+mask_ycbcr = rgb2ycbcr(matchedMask);
+mask_ycbcr(:,:,1) = double(face_ycbcr(:,:,1));
+matchedMask = ycbcr2rgb(mask_ycbcr);
 
 % Add mask to videoframe
 videoFrame = videoFrame .* uint8(~mask);
-videoFrame = videoFrame + uint8(255*matchedMask);
+videoFrame = videoFrame + uint8(matchedMask);
 end
 
 function matchedMask = MatchMaskToFace(maskIm, faceTracker)
