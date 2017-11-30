@@ -14,9 +14,9 @@ try
     moustacheMode = true;
     
     % Create the face tracker object.
-    faceDetector = vision.CascadeObjectDetector('MergeThreshold', 0);
-    eyeDetector = vision.CascadeObjectDetector('EyePairSmall','UseROI',true, 'MergeThreshold', 0);
-    noseDetector = vision.CascadeObjectDetector('Nose','UseROI',true, 'MergeThreshold', 0);
+    faceDetector = vision.CascadeObjectDetector();
+    eyeDetector = vision.CascadeObjectDetector('EyePairSmall','UseROI',true);
+    noseDetector = vision.CascadeObjectDetector('Nose','UseROI',true);
     faceTracker = OurFaceTracker(faceDetector, eyeDetector, noseDetector, frameSize);
     
     % initialize mask functionality
