@@ -70,8 +70,13 @@ matchedMask(:,:,2) = matchedMask(:,:,2)*(face_avg_lum/mask_avg_lum);
 matchedMask(:,:,3) = matchedMask(:,:,3)*(face_avg_lum/mask_avg_lum);
 
 % Add mask to videoframe
-videoFrame = videoFrame .* uint8(~mask);
-videoFrame = videoFrame + uint8(255*matchedMask);
+mergeMask = videoFrame .* uint8(~mask);
+%comment out line below for feathering
+videoFrame = mergeMask + uint8(255*matchedMask);
+%uncommentout lines below for feathering
+%videoFrame = mergeMask + uint8(255*matchedMask);
+%videoFrame = uint8(wfusimg(videoFrame,mergeMask,'sym4',1,'max','mean'));
+
 end
 
 function matchedMask = MatchMaskToFace(maskIm, faceTracker)
