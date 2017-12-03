@@ -11,9 +11,10 @@ try
     
     runLoop = true;
     frameCount = 0;
+    moustacheMode = true;
     
     % Create the face tracker object.
-    faceDetector = vision.CascadeObjectDetector();
+    faceDetector = vision.CascadeObjectDetector('FrontalFaceLBP');
     eyeDetector = vision.CascadeObjectDetector('EyePairSmall','UseROI',true);
     noseDetector = vision.CascadeObjectDetector('Nose','UseROI',true);
     faceTracker = OurFaceTracker(faceDetector, eyeDetector, noseDetector, frameSize);
@@ -44,7 +45,7 @@ try
             end
         else
             videoFrame_ann = insertText(videoFrame,[550, 380],'No face detected.',...
-                'BoxColor', 'Red', 'TextColor', 'White', 'FontSize', 18);
+                'BoxColor', 'Red', 'TextColor', 'White', 'FontSize', 1
             videoFrame_mask = insertText(videoFrame,[550, 380],'No face detected.',...
                 'BoxColor', 'Red', 'TextColor', 'White', 'FontSize', 18);
         end
@@ -52,7 +53,7 @@ try
         showR(videoFrame_mask);
         
         % Check that video-playing figure is still open
-        runLoop = ismember(findall(0,'type','figure'),vidFig);
+        runLoop = numel(ismember(findall(0,'type','figure'),vidFig)) > 0;
     end
 catch EX
     clean();
@@ -61,8 +62,8 @@ end
 clean();
 
 function toggleMoustache(~,~)
-        
-    end
+      evalin('base', 'moustacheMode = ~moustacheMode');  
+end
 
 function clean()
     % just some hacky MATLAB workspace stuff so that I can

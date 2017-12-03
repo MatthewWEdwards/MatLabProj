@@ -54,9 +54,9 @@ classdef OurFaceTracker
         end
         
         function videoFrame = annotateDetectorData(~, videoFrame, detector, ptClr, label)
-            videoFrame = insertObjectAnnotation(videoFrame, 'rectangle', detector.Bbox, label);
-%             videoFrame = insertShape(videoFrame, 'Polygon', ...
-%                 detector.BboxPolygon, 'LineWidth', 3);
+            %videoFrame = insertObjectAnnotation(videoFrame, 'rectangle', detector.Bbox, label);
+            videoFrame = insertShape(videoFrame, 'Polygon', ...
+                detector.BboxPolygon, 'LineWidth', 3);
             videoFrame = insertMarker(videoFrame, ...
                 detector.OldPts, '+', 'Color', ptClr);
         end

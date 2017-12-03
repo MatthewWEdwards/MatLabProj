@@ -46,7 +46,7 @@ try
         else
             videoFrame_ann = insertText(videoFrame,[550, 380],'No face detected.',...
                 'BoxColor', 'Red', 'TextColor', 'White', 'FontSize', 18);
-            videoFrame_ann = faceTracker.annotateData(videoFrame);
+            videoFrame_ann = faceTracker.annotateData(videoFrame_ann);
             videoFrame_mask = insertText(videoFrame,[550, 380],'No face detected.',...
                 'BoxColor', 'Red', 'TextColor', 'White', 'FontSize', 18);
         end
