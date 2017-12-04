@@ -2,16 +2,27 @@ classdef OurMaskRealizer
     %OURMASKREALIZER 
     
     properties
-        MaskMapAz
         Handlebar
         HandlebarAlpha
+        MaskOptions
+        MaskMaps
+        Mask
     end
     
     methods
         function obj = OurMaskRealizer()
-            load('MaskMap_Azimuth.mat');
-            obj.MaskMapAz = maskMap;
+            obj = obj.loadMaskMaps();
             [obj.Handlebar, ~, obj.HandlebarAlpha] = imread('handlebar.png');
+        end
+        
+        function obj = loadMaskMaps(obj)
+            obj.MaskOptions = {'Bovik','Big Ed'};
+            obj.MaskMaps = containers.Map('KeyType','uint32', 'ValueType', 'any');
+            load('MaskMapBovik.mat');
+            obj.MaskMaps(1) = maskMap;
+            load('MaskMapMatt.mat');
+            obj.MaskMaps(2) = maskMap;
+            obj.Mask = 1;
         end
         
         function videoFrame = AddMask(obj, videoFrame, faceTracker)
@@ -34,7 +45,8 @@ classdef OurMaskRealizer
             if sampled_azimuth < -50
                 sampled_azimuth = -50;
             end
-            maskIm = obj.MaskMapAz(sampled_azimuth);
+            maskMap = obj.MaskMaps(obj.Mask);
+            maskIm = maskMap(sampled_azimuth);
         end
        
         function videoFrame = AddMoustache(obj, videoFrame, faceTracker)
@@ -54,6 +66,11 @@ classdef OurMaskRealizer
                 
             end
         end
+        
+        function obj = SetMask(obj, maskNum)
+            obj.Mask = maskNum;
+        end
+     
     end
 end
 

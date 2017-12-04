@@ -5,9 +5,9 @@
 %
 %%%%%%%%
 function [showFrameOnL, showFrameOnR, hFig] = SideBySideVideo(mainTitle, leftTitle, ...
-                   rightTitle, toggleBtnCallback, resetBtnCallback)
+             rightTitle, toggleBtnCallback, resetBtnCallback, dropdownCallback, dropdownOptions)
     [hFig, hAxes] = createFigureAndAxes(mainTitle, leftTitle, rightTitle);
-    insertButtons(hFig, toggleBtnCallback, resetBtnCallback);
+    insertUI(hFig, toggleBtnCallback, resetBtnCallback, dropdownCallback, dropdownOptions);
     showFrameOnL = @(frame) showFrameOnAxis(hAxes.axis1, frame);
     showFrameOnR = @(frame) showFrameOnAxis(hAxes.axis2, frame);
 end
@@ -56,10 +56,17 @@ function insertButton(hFig,text,pos,cb)
     uicontrol(hFig,'unit','pixel','style','pushbutton','string',text,...
             'position',pos, 'tag','PBButton123','callback',cb);
 end
-function insertButtons(hFig,toggleCb, resetCb)
+function insertDropdown(hFig,options,pos,cb)
+    uicontrol(hFig,'Style', 'popup',...
+           'String', options,...
+           'Position', pos,...
+           'Callback', cb); 
+end
+function insertUI(hFig,toggleCb, resetCb,dropdownCb, dropdownOptions)
     space = 50;
     width = 200;
     res_width = 1472;
-    insertButton(hFig,'Toggle Stache Mode', [(res_width/2 - space - width) 100 width 25], toggleCb);
-    insertButton(hFig,'Reset Tracker', [(res_width/2+space) 100 width 25], resetCb);
+    insertButton(hFig,'Toggle Stache Mode', [(res_width/4) 100 width 25], toggleCb);
+    insertButton(hFig,'Reset Tracker', [(res_width/2) 100 width 25], resetCb);
+    insertDropdown(hFig,dropdownOptions, [(3*res_width/4) 100 width 25],dropdownCb);
 end

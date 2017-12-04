@@ -24,7 +24,7 @@ try
     maskRealizer = OurMaskRealizer();
     
     [showL, showR, vidFig] = SideBySideVideo('FaceMask JaviMaCoop', 'Face Data',...
-        'FaceMask Video', @toggleMoustache, @resetFaceTracker);
+        'FaceMask Video', @toggleMoustache, @resetFaceTracker, @dropdownCb, maskRealizer.MaskOptions);
     
     while runLoop && frameCount < 400
         frameCount = frameCount + 1;
@@ -61,6 +61,10 @@ catch EX
     rethrow(EX);
 end
 clean();
+
+function dropdownCb(source,~)
+    evalin('base', sprintf('maskRealizer = maskRealizer.SetMask(%.f)', source.Value));
+end
 
 function resetFaceTracker(~,~)
     evalin('base', 'faceTracker = faceTracker.Reset()');
