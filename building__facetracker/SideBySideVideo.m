@@ -4,9 +4,10 @@
 % Adapted by Cooper Raterink on 11.28
 %
 %%%%%%%%
-function [showFrameOnL, showFrameOnR, hFig] = SideBySideVideo(mainTitle, leftTitle, rightTitle, btnTitle, toggleBtnCallback)
+function [showFrameOnL, showFrameOnR, hFig] = SideBySideVideo(mainTitle, leftTitle, ...
+                   rightTitle, toggleBtnCallback, resetBtnCallback)
     [hFig, hAxes] = createFigureAndAxes(mainTitle, leftTitle, rightTitle);
-    insertButtons(hFig,btnTitle, toggleBtnCallback);
+    insertButtons(hFig, toggleBtnCallback, resetBtnCallback);
     showFrameOnL = @(frame) showFrameOnAxis(hAxes.axis1, frame);
     showFrameOnR = @(frame) showFrameOnAxis(hAxes.axis2, frame);
 end
@@ -51,9 +52,14 @@ function hAxis = createPanelAxisTitle(hFig, pos, axisTitle)
         'Parent',hFig,'Position', titlePos,...
         'BackgroundColor',hFig.Color);
 end
-function insertButtons(hFig,btnTitle, cb)
-    % toggle button with text btnTitlw
-    uicontrol(hFig,'unit','pixel','style','pushbutton','string',btnTitle,...
-            'position',[600 100 75 25], 'tag','PBButton123','callback',...
-            cb);
+function insertButton(hFig,text,pos,cb)
+    uicontrol(hFig,'unit','pixel','style','pushbutton','string',text,...
+            'position',pos, 'tag','PBButton123','callback',cb);
+end
+function insertButtons(hFig,toggleCb, resetCb)
+    space = 50;
+    width = 200;
+    res_width = 1472;
+    insertButton(hFig,'Toggle Stache Mode', [(res_width/2 - space - width) 100 width 25], toggleCb);
+    insertButton(hFig,'Reset Tracker', [(res_width/2+space) 100 width 25], resetCb);
 end

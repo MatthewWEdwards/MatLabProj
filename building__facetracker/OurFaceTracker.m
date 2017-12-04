@@ -88,8 +88,14 @@ classdef OurFaceTracker
             mag = sqrt(sum(eyeNoseVec.^2));
             eyeNoseVecNorm = eyeNoseVec/mag;
             % locate philtrum down eye-nose line from noseCenter
-            handlebarMountLoc = noseCenter + 22*eyeNoseVecNorm;
-        end     
+            handlebarMountLoc = noseCenter + 24*eyeNoseVecNorm;
+        end
+        
+        function obj = Reset(obj)
+           obj.FaceDetector = obj.FaceDetector.Reset();
+           obj.EyesDetector = obj.EyesDetector.Reset();
+           obj.NoseDetector = obj.NoseDetector.Reset();
+        end
     end
     
 end

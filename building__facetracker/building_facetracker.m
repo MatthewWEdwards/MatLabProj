@@ -23,8 +23,8 @@ try
     load('mask_im.mat');
     maskRealizer = OurMaskRealizer();
     
-    [showL, showR, vidFig] = SideBySideVideo('FaceMask JaviMaCoop', 'Face Data', 'FaceMask Video', ...
-        'Toggle Stache Mode', @toggleMoustache);
+    [showL, showR, vidFig] = SideBySideVideo('FaceMask JaviMaCoop', 'Face Data',...
+        'FaceMask Video', @toggleMoustache, @resetFaceTracker);
     
     while runLoop && frameCount < 400
         frameCount = frameCount + 1;
@@ -62,8 +62,12 @@ catch EX
 end
 clean();
 
+function resetFaceTracker(~,~)
+    evalin('base', 'faceTracker = faceTracker.Reset()');
+end
+
 function toggleMoustache(~,~)
-      evalin('base', 'moustacheMode = ~moustacheMode');  
+    evalin('base', 'moustacheMode = ~moustacheMode');  
 end
 
 function clean()

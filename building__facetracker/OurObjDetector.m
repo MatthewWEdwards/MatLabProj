@@ -104,6 +104,12 @@ classdef OurObjDetector
             [geom,~,~] = polygeom(obj.BboxPts(:,1), obj.BboxPts(:,2));
             center = fliplr(geom(2:3)); % x coord is row (2nd dim), etc
         end
+        
+        function obj = Reset(obj)
+            obj.Bbox = [];
+            obj.BboxPts = [];
+            obj.NumPts = 0;
+        end
     end
     
 end
